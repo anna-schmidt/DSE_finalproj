@@ -17,7 +17,7 @@ hist(data_final$chlorophyll.a)
 # will use the gamma(?) distribution
 
 # Preliminary look at the the effects of each covariate on chlorophyll-a
-plot(data_final$water.temperature, data_final$chlorophyll.a)
+plot(data_final$water.temperature, data_final$specified.depth)
 plot(data_final$oxygen.concentration, data_final$chlorophyll.a)
 plot(data_final$TP_ugL, data_final$chlorophyll.a)
 plot(data_final$TN_ugL, data_final$chlorophyll.a)

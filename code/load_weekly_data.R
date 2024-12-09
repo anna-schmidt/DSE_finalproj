@@ -102,3 +102,5 @@ data_final$timing <- as.factor(data_final$timing)
 
 # Check the structure again
 str(data_final)
+
+plot(data_final$temperature, data_final$specified.depth)

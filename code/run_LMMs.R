@@ -29,7 +29,7 @@ AIC(mod1, mod2)
 # mod2 is better
 
 # DHARMa for mod2
-simOut <- simulateResiduals(mod2, n = 250)
+simOut <- simulateResiduals(mod1, n = 250)
 plot(simOut)
 # pretty bad
 
@@ -39,43 +39,22 @@ plot(simOut)
 data_final$week <- as.factor(data_final$week)
 data_final$specified.depth <- as.factor(data_final$specified.depth)
 
-mod3 <- glmmTMB(chlorophyll.a ~ water.temperature.z + oxygen.concentration.z +
+mod3 <- glmmTMB(chlorophyll.a ~ oxygen.concentration.z + # removed temperature
                   fish_treatment + timing +
+                  fish_treatment*timing +
                   TP_ugL.z + TN_ugL.z + total_zoop_density_L.z + avg_zoop_length_um.z +
                   ar1(week + 0 | enclosure) +           # temporal AR1 within each enclosure
                   ar1(specified.depth + 0 | enclosure), # spatial AR1 within each enclosure
-                REML = T,
+                REML = F, # F when you're doing fixed effects model selection
                 data = data_final,
                 family = Gamma(link = "log"))
 summary(mod3)
 
 # Use AIC to compare which model is a better fit
 AIC(mod1, mod2, mod3)
-# mod3 is the best
 
 # DHARMa for mod3
 simOut <- simulateResiduals(mod3, n = 250)
-plot(simOut)
-# not very good
-
-# Mixed effects model with enclosure as a random effect but and ar1() terms for both time and space, but with | 1 instead of | enclosure
-mod4 <- glmmTMB(chlorophyll.a ~ water.temperature.z + oxygen.concentration.z +
-                  fish_treatment + timing +
-                  TP_ugL.z + TN_ugL.z + total_zoop_density_L.z + avg_zoop_length_um.z +
-                  (1|enclosure) +
-                  ar1(week + 0 | 1) +           # temporal AR1 applied globally
-                  ar1(specified.depth + 0 | 1), # spatial AR1 applied globally
-                REML = T,
-                data = data_final,
-                family = Gamma(link = "log"))
-summary(mod4)
-
-# Use AIC to compare which model is a better fit
-AIC(mod1, mod2, mod3, mod4)
-# mod3 is still the best
-
-# DHARMa for mod4
-simOut <- simulateResiduals(mod4, n = 250)
 plot(simOut)
 # not very good
 
