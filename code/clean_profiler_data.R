@@ -17,8 +17,7 @@ profiler_cleaned_final <- readRDS(file = "data/profiler_cleaned_final.rds")
 # and make date and week columns characters for potting
 profiler <- profiler_cleaned_final %>%
   mutate(date = date(profile.datetime)) %>%
-  select(-c(id, profile.datetime, conductivity, pH.value, phycocyanin, probe.serial.number,
-            day_profiledatetime, month_profiledatetime, year_profiledatetime)) %>%
+  select(-c(id, profile.datetime, conductivity, pH.value, phycocyanin, photosynthetically.active.radiation.up, probe.serial.number, day_profiledatetime, month_profiledatetime, year_profiledatetime)) %>%
   subset(hour_profile.datetime == 0) %>%
   subset(enclosure != "L01") %>%
   mutate(week = case_when(date %in% c("2023-04-25", "2023-04-26", "2023-04-27", "2023-04-28", "2023-04-29") ~ 1,
@@ -38,19 +37,9 @@ str(profiler)
 
 # Visualize vertical depth plots of all mesocosms, all dates, all depths to show how many data points we have
 # could also make heatmaps of chlorophyll for each mesocosm, but would be harder to include as a single figure in the report, so maybe use this one
-ggplot(profiler, aes(x = chlorophyll.a, y = specified.depth, color = week)) +
+ggplot(profiler, aes(x = chlorophyll.a, y = specified.depth, color = date)) +
   geom_point(alpha = 0.4) +
   geom_line(orientation = "y", alpha = 0.4, aes(group = date)) +
-  scale_y_reverse() +
-  facet_wrap(~enclosure, ncol = 7) +
-  theme_bw()
-
-# -----------------
-
-# to figure out: if I want to use PAR, I will need to use day data, take PAR out perhaps? or grab the noon par and use midnight data for the other parameters?
-ggplot(profiler, aes(x = photosynthetically.active.radiation.up, y = specified.depth, color = date)) +
-  geom_point(alpha = 0.4) +
-  geom_line(orientation = "y", alpha = 0.4) +
   scale_y_reverse() +
   facet_wrap(~enclosure, ncol = 7) +
   theme_bw()
