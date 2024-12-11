@@ -33,6 +33,9 @@ ggpairs(data_final)
 plot(data_final$water.temperature, data_final$specified.depth)
 # water temperature and depth are highly correlated (-0.8) (to be expected) - decision to remove water.temperature as a covariate because it will be dealt with in the specified.depth AR term
 
+# Models ran better if I removed the deep depths that were only in some of the mesocosms. Set the cutoff to <16 m to deal with this.
+#data_final <- data_final %>% subset(specified.depth < 10) # this makes DHARMa better but is removing a of of the data....
+
 # Z-transform (scale) all the numeric covariates
 # and remove columns I won't be using anymore
 data_final <- data_final %>% 
@@ -47,3 +50,6 @@ data_final <- data_final %>%
             total_zoop_biomass_ugL,
             avg_zoop_length_um,
             water.temperature))
+
+
+

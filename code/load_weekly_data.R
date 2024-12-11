@@ -145,7 +145,7 @@ data_final <- data3 %>%
 
 # Crate a dataframe of every combination of enclosure, day (filling in gaps), and specified.depth
 empty_names <- data_final %>%
-  expand(enclosure, full_seq(day, 1), specified.depth) %>%
+  tidyr::expand(enclosure, full_seq(day, 1), specified.depth) %>%
   rename(day = `full_seq(day, 1)`)
 
 # Join on those columns
@@ -164,3 +164,5 @@ data_final$timing <- as.factor(data_final$timing)
 
 # Check the structure again
 str(data_final)
+
+
