@@ -42,4 +42,5 @@ ggplot(profiler, aes(x = chlorophyll.a, y = specified.depth, color = date)) +
   geom_line(orientation = "y", alpha = 0.4, aes(group = date)) +
   scale_y_reverse() +
   facet_wrap(~enclosure, ncol = 7) +
-  theme_bw()
+  theme_bw(base_size = 15) +
+  labs(x = "Chlorophyll-a fluorescence (ug/L)", y = "Depth (m)", color = "Date")

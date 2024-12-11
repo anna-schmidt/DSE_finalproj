@@ -20,14 +20,16 @@ nutrients_clean <- nutrients %>%
 ggplot(nutrients_clean, aes(x = week, y = TP_ugL)) +
   geom_boxplot() +
   theme_bw()
+# looks okay
 ggplot(nutrients_clean, aes(x = week, y = TN_ugL)) +
   geom_boxplot() +
   theme_bw()
+# looks okay
 
 # Join with profiler data
 data1 <- left_join(profiler, nutrients_clean, by = c("enclosure", "depth_layer", "week"))
 
-# ------------------ Zooplankton density data ------------------
+# ------------------ Zooplankton biomass data ------------------
 
 # Read in "zooplankton_experiment_summary.csv" that was generated in my "SPF_analysis" R project
 zoop_density <- read.csv("data/zooplankton_experiment_summary.csv")
@@ -45,7 +47,6 @@ zoop_density_biomass <- zoop_density %>%
   mutate(biomass_ug_ind = exp(b*log(avg_length_mm) + lnA)) %>%
   mutate(biomass_ug_L = biomass_ug_ind*counts.L)
   
-
 # Remove columns that I won't be using in this analysis,
 # remove L01 because I won't be using the lake station in this analysis,
 # sum up the densities for all taxa within each week and enclosure,
@@ -58,12 +59,12 @@ zoop_biomass_clean <- zoop_density_biomass %>%
   ungroup() %>%
   mutate_at("week", as.character)
 
-# Visualize change in zoop density across the weeks, to assess collinearity and determine if I should keep zoop density in the model
+# Visualize change in zoop biomass across the weeks, to assess collinearity and determine if I should keep zoop density in the model
 # all mesocosms together - should I be doing this for each mesocosm separately? won't have error bars though
 ggplot(zoop_biomass_clean, aes(x = week, y = total_zoop_biomass_ugL)) +
   geom_boxplot() +
-  facet_wrap(~enclosure) +
   theme_bw()
+# looks okay, maybe slight collinearity with week
 
 # Join with profiler data + nutrient data
 data2 <- left_join(data1, zoop_biomass_clean, by = c("enclosure", "week"))
@@ -92,7 +93,7 @@ zoop_lengths_clean <- zoop_lengths %>%
 ggplot(zoop_lengths_clean, aes(x = week, y = avg_zoop_length_um)) +
   geom_boxplot() +
   theme_bw()
-# sort of a relationship over time with zoop lengths...enough to justify removing it from the analysis??
+# sort of a relationship over time with zoop lengths...enough to justify removing it from the analysis?? - decided to go with biomass instead of density and lengths
 
 # Join with profiler data + nutrient data + zooplankton density data
 data3 <- left_join(data2, zoop_lengths_clean, by = c("enclosure", "week"))
@@ -165,4 +166,5 @@ data_final$timing <- as.factor(data_final$timing)
 # Check the structure again
 str(data_final)
 
-
+# Remove the deep depths that were only in some of the mesocosms. Set the cutoff to <16 m to deal with this.
+#data_final <- data_final %>% subset(specified.depth < 16)

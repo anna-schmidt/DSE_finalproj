@@ -33,9 +33,6 @@ ggpairs(data_final)
 plot(data_final$water.temperature, data_final$specified.depth)
 # water temperature and depth are highly correlated (-0.8) (to be expected) - decision to remove water.temperature as a covariate because it will be dealt with in the specified.depth AR term
 
-# Models ran better if I removed the deep depths that were only in some of the mesocosms. Set the cutoff to <16 m to deal with this.
-#data_final <- data_final %>% subset(specified.depth < 10) # this makes DHARMa better but is removing a of of the data....
-
 # Z-transform (scale) all the numeric covariates
 # and remove columns I won't be using anymore
 data_final <- data_final %>% 
@@ -49,7 +46,19 @@ data_final <- data_final %>%
             TN_ugL,
             total_zoop_biomass_ugL,
             avg_zoop_length_um,
-            water.temperature))
+            water.temperature,
+            avg_zoop_length_um.z))
 
+data_final$specified.depth <- as.factor(data_final$specified.depth)
+# Visualize impacts of the random effects
+ggplot(data_final, 
+       aes(x = specified.depth, y = chlorophyll.a)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank())
 
-
+ggplot(data_final, 
+       aes(x = day, y = chlorophyll.a)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank())
