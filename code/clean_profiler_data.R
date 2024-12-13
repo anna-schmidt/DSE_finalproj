@@ -37,10 +37,11 @@ str(profiler)
 
 # Visualize vertical depth plots of all mesocosms, all dates, all depths to show how many data points we have
 # could also make heatmaps of chlorophyll for each mesocosm, but would be harder to include as a single figure in the report, so maybe use this one
-ggplot(profiler, aes(x = chlorophyll.a, y = specified.depth, color = date)) +
+p1 <- ggplot(profiler, aes(x = chlorophyll.a, y = specified.depth, color = date)) +
   geom_point(alpha = 0.4) +
   geom_line(orientation = "y", alpha = 0.4, aes(group = date)) +
   scale_y_reverse() +
   facet_wrap(~enclosure, ncol = 7) +
   theme_bw(base_size = 15) +
-  labs(x = "Chlorophyll-a fluorescence (ug/L)", y = "Depth (m)", color = "Date")
+  labs(x = "Chlorophyll-a concentration (\u00b5g/L)", y = "Depth (m)", color = "Date")
+ggsave(path = "figures", filename = "chlorophyll_plots.png", plot = p1, device = "png", width = 37, height = 22, units = "cm", dpi = 300)

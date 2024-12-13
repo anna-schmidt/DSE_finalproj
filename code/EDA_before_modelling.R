@@ -9,8 +9,12 @@ summary(data_final)
 str(data_final)
 
 # Look at the distribution of our response variable, chlorophylla.a
-hist(data_final$chlorophyll.a)
-# all values are above 0, continuous, slightly right-skewed
+p6 <- ggplot(data_final, aes(x = chlorophyll.a)) +
+  geom_histogram(binwidth = 0.5, color = "white", fill = "#5D69B1") +
+  theme_bw(base_size = 15) +
+  labs(x = "Chlorophyll-a concentration (\u00b5g/L)", y = "Frequency")
+ggsave(path = "figures", filename = "chlorophyll_histogram.png", plot = p6, device = "png", width = 17, height = 19, units = "cm", dpi = 300)
+# all values are above 0, continuous, right-skewed
 # will use the gamma distribution
 
 # Preliminary look at the the effects of each covariate on chlorophyll-a
@@ -19,7 +23,6 @@ plot(data_final$oxygen.concentration, data_final$chlorophyll.a)
 plot(data_final$TP_ugL, data_final$chlorophyll.a)
 plot(data_final$TN_ugL, data_final$chlorophyll.a)
 plot(data_final$total_zoop_biomass_ug, data_final$chlorophyll.a)
-plot(data_final$avg_zoop_length_um, data_final$chlorophyll.a)
 
 plot(data_final$fish_treatment, data_final$chlorophyll.a)
 plot(data_final$timing, data_final$chlorophyll.a)
@@ -29,8 +32,18 @@ plot(data_final$specified.depth, data_final$chlorophyll.a)
 plot(data_final$day, data_final$chlorophyll.a)
 
 # Assess collinearity between covariates
-ggpairs(data_final)
-plot(data_final$water.temperature, data_final$specified.depth)
+# want to do this on the data frame without NAs
+data_final_noNAs <- data_final %>% subset(chlorophyll.a > 0)
+p7 <- ggpairs(data_final_noNAs)
+ggsave(path = "figures", filename = "collinearity.png", plot = p7, device = "png", width = 30, height = 30, units = "cm", dpi = 300)
+
+# Plot of water temperature and depth correlation
+p8 <- ggplot(data_final, aes(x = water.temperature, y = specified.depth)) +
+  scale_y_reverse() +
+  geom_point(alpha = 1) +
+  theme_bw(base_size = 15) +
+  labs(x = expression(Temperature~"("*degree*C*")"), y = "Depth (m)")
+ggsave(path = "figures", filename = "temp_vs_depth.png", plot = p8, device = "png", width = 17, height = 17, units = "cm", dpi = 300)
 # water temperature and depth are highly correlated (-0.8) (to be expected) - decision to remove water.temperature as a covariate because it will be dealt with in the specified.depth AR term
 
 # Z-transform (scale) all the numeric covariates
@@ -39,26 +52,5 @@ data_final <- data_final %>%
   mutate(oxygen.concentration.z = scale(oxygen.concentration)[,1],
          TP_ugL.z = scale(TP_ugL)[,1],
          TN_ugL.z = scale(TN_ugL)[,1],
-         total_zoop_biomass_ugL.z = scale(total_zoop_biomass_ugL)[,1],
-         avg_zoop_length_um.z = scale(avg_zoop_length_um)[,1]) %>%
-  select(-c(oxygen.concentration,
-            TP_ugL,
-            TN_ugL,
-            total_zoop_biomass_ugL,
-            avg_zoop_length_um,
-            water.temperature,
-            avg_zoop_length_um.z))
-
-data_final$specified.depth <- as.factor(data_final$specified.depth)
-# Visualize impacts of the random effects
-ggplot(data_final, 
-       aes(x = specified.depth, y = chlorophyll.a)) +
-  geom_boxplot() +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank())
-
-ggplot(data_final, 
-       aes(x = day, y = chlorophyll.a)) +
-  geom_boxplot() +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank())
+         total_zoop_biomass_ugL.z = scale(total_zoop_biomass_ugL)[,1]) %>%
+  select(-c(oxygen.concentration, TP_ugL, TN_ugL, total_zoop_biomass_ugL, water.temperature))

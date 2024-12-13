@@ -3,6 +3,7 @@
 # December 7, 2024
 
 library(tidyverse)
+library(patchwork)
 
 # ------------------ Nutrient data ------------------
 
@@ -14,17 +15,6 @@ nutrients <- readRDS(file = "data/nutrient_data.rds")
 nutrients_clean <- nutrients %>%
   select(c("enclosure", "depth_layer", "TP_ugL", "TN_ugL", "week")) %>% # (there are other nutrient data columns, but I am choosing just to use TN and TP)
   subset(enclosure != "L01")
-
-# Visualize change in nutrients across the weeks, to assess collinearity and determine if I should keep nutrients in the model
-# all mesocosms together - should I be doing this for each mesocosm separately? won't have error bars though
-ggplot(nutrients_clean, aes(x = week, y = TP_ugL)) +
-  geom_boxplot() +
-  theme_bw()
-# looks okay
-ggplot(nutrients_clean, aes(x = week, y = TN_ugL)) +
-  geom_boxplot() +
-  theme_bw()
-# looks okay
 
 # Join with profiler data
 data1 <- left_join(profiler, nutrients_clean, by = c("enclosure", "depth_layer", "week"))
@@ -59,50 +49,51 @@ zoop_biomass_clean <- zoop_density_biomass %>%
   ungroup() %>%
   mutate_at("week", as.character)
 
-# Visualize change in zoop biomass across the weeks, to assess collinearity and determine if I should keep zoop density in the model
-# all mesocosms together - should I be doing this for each mesocosm separately? won't have error bars though
-ggplot(zoop_biomass_clean, aes(x = week, y = total_zoop_biomass_ugL)) +
-  geom_boxplot() +
-  theme_bw()
-# looks okay, maybe slight collinearity with week
-
 # Join with profiler data + nutrient data
 data2 <- left_join(data1, zoop_biomass_clean, by = c("enclosure", "week"))
 
-# ------------------ Zooplankton length data ------------------
+# ------------------ Assess changes in numeric covariates across time to justify inclusion in the model ------------------
 
-# Read in "zooplankton_experiment_lengths.csv" that was generated in my "SPF_analysis" R project
-zoop_lengths <- read.csv("data/zooplankton_experiment_lengths.csv")
+# Visualize change in these parameters across the weeks, to assess collinearity and determine if I should keep them in the model
 
-# Remove columns that I won't be using in this analysis,
-# remove L01 because I won't be using the lake station in this analysis,
-# remove week 0,
-# average the lengths for all taxa within each week and enclosure,
-# and make week a character
-zoop_lengths_clean <- zoop_lengths %>%
-  select(c("week", "enclosure", "length_um")) %>% 
-  subset(enclosure != "L01") %>%
-  subset(week != 0) %>%
-  group_by(week, enclosure) %>%
-  summarize(avg_zoop_length_um = mean(length_um)) %>%
-  ungroup() %>%
-  mutate_at("week", as.character)
+my_colors <- c("#E58606", "#99C945", "#5D69B1", "#CC61B0", "#A3D5FF","#24796C", "#DAA51B", "#2F8AC4", "#764E9F", "#dcbeff",  "#ED645A", "#a9a9a9", "#8D021F", "#000075")
 
-# Visualize change in zoop lengths across the weeks, to assess collinearity and determine if I should keep zoop density in the model
-# all mesocosms together - should I be doing this for each mesocosm separately? won't have error bars though
-ggplot(zoop_lengths_clean, aes(x = week, y = avg_zoop_length_um)) +
+# Oxygen concentration
+p2 <- ggplot(profiler, aes(x = week, y = oxygen.concentration, fill = enclosure)) +
   geom_boxplot() +
-  theme_bw()
-# sort of a relationship over time with zoop lengths...enough to justify removing it from the analysis?? - decided to go with biomass instead of density and lengths
+  theme_bw(base_size = 15) +
+  labs(x = "Week", y = "Oxygen concentration (mg/L)", color = "Enclosure") +
+  scale_fill_manual(values = my_colors) + theme(legend.position = "top")
 
-# Join with profiler data + nutrient data + zooplankton density data
-data3 <- left_join(data2, zoop_lengths_clean, by = c("enclosure", "week"))
+# Total phosphorus
+p3 <- ggplot(nutrients_clean, aes(x = week, y = TP_ugL, fill = enclosure)) +
+  geom_boxplot() +
+  theme_bw(base_size = 15) +
+  labs(x = "Week", y = "Total phosphorus concentration (\u00b5g/L)", color = "Enclosure") +
+  scale_fill_manual(values = my_colors) + theme(legend.position = "none")
+
+# Total nitrogen
+p4 <- ggplot(nutrients_clean, aes(x = week, y = TN_ugL, fill = enclosure)) +
+  geom_boxplot() +
+  theme_bw(base_size = 15) +
+  labs(x = "Week", y = "Total nitrogen concentration (\u00b5g/L)", color = "Enclosure") +
+  scale_fill_manual(values = my_colors) + theme(legend.position = "none")
+
+# Zooplankton biomass
+p5 <- ggplot(zoop_biomass_clean, aes(x = week, y = total_zoop_biomass_ugL, color = enclosure)) +
+  geom_boxplot() +
+  theme_bw(base_size = 15) +
+  labs(x = "Week", y = "Total zooplankton biomass (\u00b5g/L)", color = "Enclosure") +
+  scale_color_manual(values = my_colors) + theme(legend.position = "none")
+
+p6 <- (p2+p4) / (p3+p5)
+ggsave(path = "figures", filename = "num_byweek_plots.png", plot = p6, device = "png", width = 48, height = 29, units = "cm", dpi = 300)
 
 # ------------------ Create final dataframe for running EDA and models  ------------------
 
-# Make a new column for "day" to use day as my AR(1) term instead of week (based on Mark's advice)
+# Make a new column for "day" to use day as my AR(1) term instead of week (based on Mark's advice) (probably an easier way to do this but I couldn't figure it out, so just doing the long way)
 # and remove columns that I won't be using in this analysis
-data_final <- data3 %>%
+data_final <- data2 %>%
   mutate(day = case_when(date == "2023-04-25" ~ 1,
                          date == "2023-04-26" ~ 2,
                          date == "2023-04-29" ~ 5,
@@ -165,6 +156,3 @@ data_final$timing <- as.factor(data_final$timing)
 
 # Check the structure again
 str(data_final)
-
-# Remove the deep depths that were only in some of the mesocosms. Set the cutoff to <16 m to deal with this.
-#data_final <- data_final %>% subset(specified.depth < 16)
